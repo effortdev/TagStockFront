@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import StockDetail from './pages/StockDetail';
 import AdminBatch from './pages/AdminBatch';
 import Signup from './pages/Signup';
+import OAuth2RedirectHandler from './pages/OAuth2RedirectHandler';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="/home" element={<Home />} />
             <Route path="/stock/:code" element={<StockDetail />} />
             <Route path="/admin" element={<AdminBatch />} />
+            <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
           </Routes>
         </main>
 
