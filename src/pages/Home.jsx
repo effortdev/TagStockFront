@@ -15,9 +15,8 @@ export default function Home() {
   // 알림 중복 방지용 방패 생성 (초기값은 false)
   const isAlerted = useRef(false);
 
-  // 임시 고정 태그 리스트
   const aiTags = [
-    '#골든크로스임박', '#외인매집중', '#과매도구간', '#박스권돌파', '#실적턴어라운드', '#AI분석완료' // 🌟 요것만 추가!
+    '#골든크로스임박', '#외인매집중', '#과매도구간', '#박스권돌파', '#실적턴어라운드'
   ];
 
   // selectedTag가 변경될 때마다 백엔드 API를 호출합니다.
