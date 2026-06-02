@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, TrendingUp, TrendingDown, Tag } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Tag, Sparkles } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -12,12 +12,12 @@ export default function Home() {
   // 백엔드에서 받아올 주식 데이터를 담을 상태
   const [stocks, setStocks] = useState([]);
 
-  // 🌟 알림 중복 방지용 방패 생성 (초기값은 false)
+  // 알림 중복 방지용 방패 생성 (초기값은 false)
   const isAlerted = useRef(false);
 
-  // 임시 고정 태그 리스트 (나중에는 이 태그 목록도 백엔드에서 동적으로 받아올 수 있습니다)
+  // 임시 고정 태그 리스트
   const aiTags = [
-    '#골든크로스임박', '#외인매집중', '#과매도구간', '#박스권돌파', '#실적턴어라운드'
+    '#골든크로스임박', '#외인매집중', '#과매도구간', '#박스권돌파', '#실적턴어라운드', '#AI분석완료' // 🌟 요것만 추가!
   ];
 
   // selectedTag가 변경될 때마다 백엔드 API를 호출합니다.
@@ -26,17 +26,17 @@ export default function Home() {
     
     // 문지기 로직: 토큰이 없으면 로그인 화면으로 쫓아냅니다.
     if (!token) {
-      if (!isAlerted.current) { // 방패가 내려가 있을 때만 알림을 띄웁니다.
+      if (!isAlerted.current) { 
         alert('로그인이 필요한 서비스입니다.');
-        isAlerted.current = true; // 알림을 띄웠으니 방패를 올립니다.
+        isAlerted.current = true; 
         navigate('/');
       }
-      return; // 🌟 여기서 함수를 종료시켜 아래의 axios 호출을 막습니다.
+      return; 
     }
 
     // 주식 데이터 가져오기
     axios.get('http://localhost:8080/api/v1/stocks', {
-      params: { tag: selectedTag }, // params를 쓰면 '#' 기호가 안전하게 URL 인코딩되어 전송됩니다.
+      params: { tag: selectedTag }, 
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -47,7 +47,6 @@ export default function Home() {
     .catch(error => {
       console.error("데이터 조회 실패", error);
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-        // 토큰 만료 시에도 중복 알림 방지 적용
         if (!isAlerted.current) {
           alert('인증이 만료되었습니다. 다시 로그인해주세요.');
           isAlerted.current = true;
@@ -56,7 +55,7 @@ export default function Home() {
         }
       }
     });
-  }, [selectedTag, navigate]); // selectedTag가 바뀔 때마다 이 useEffect가 다시 실행됩니다!
+  }, [selectedTag, navigate]); 
 
   return (
     <div className="max-w-6xl mx-auto space-y-10">
@@ -91,7 +90,7 @@ export default function Home() {
           {aiTags.map(tag => (
             <button
               key={tag}
-              onClick={() => setSelectedTag(tag)} // 버튼 클릭 시 선택된 태그 상태 변경 -> useEffect 자동 실행
+              onClick={() => setSelectedTag(tag)} 
               className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
                 selectedTag === tag 
                   ? 'bg-blue-600 text-white shadow-md' 
@@ -117,36 +116,65 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {stocks.map(stock => (
-              <Link 
-                key={stock.code} 
-                to={`/stock/${stock.code}`}
-                className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow group cursor-pointer"
-              >
-                <div className="flex justify-between items-start mb-4">
+            {stocks.map(stock => {
+              // 🌟 DB의 JSON 문자열 형태인 aiTags를 배열로 안전하게 변환합니다.
+              // 만약 값이 없거나 파싱에 실패하면 빈 배열을 사용합니다.
+              let parsedTags = [];
+              try {
+                parsedTags = typeof stock.aiTags === 'string' ? JSON.parse(stock.aiTags) : (stock.tags || []);
+              } catch (e) {
+                parsedTags = [];
+              }
+
+              // 등락률 데이터가 없는 경우를 대비한 가공 처리 (필요시 사용)
+              const rate = stock.rate || "0.0%";
+
+              return (
+                <Link 
+                  key={stock.stockCode} // 🌟 code -> stockCode 매핑 수정
+                  to={`/stock/${stock.stockCode}`} // 🌟 code -> stockCode 매핑 수정
+                  className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 duration-200 group cursor-pointer flex flex-col justify-between"
+                >
                   <div>
-                    <h4 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{stock.name}</h4>
-                    <span className="text-sm text-gray-400">{stock.code}</span>
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        {/* 🌟 name -> stockName 매핑 수정 */}
+                        <h4 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{stock.stockName}</h4>
+                        {/* 🌟 code -> stockCode 매핑 수정 */}
+                        <span className="text-sm text-gray-400 font-mono">{stock.stockCode}</span>
+                      </div>
+                      <div className="text-right">
+                        {/* 🌟 price -> closePrice 매핑 수정 및 천단위 콤마 표시 */}
+                        <p className="text-lg font-bold text-gray-900">{stock.closePrice?.toLocaleString()}원</p>
+                        <p className={`text-sm font-medium flex items-center justify-end gap-1 ${rate.startsWith('+') ? 'text-red-500' : rate.startsWith('-') ? 'text-blue-500' : 'text-gray-500'}`}>
+                          {rate.startsWith('+') ? <TrendingUp size={14} /> : rate.startsWith('-') ? <TrendingDown size={14} /> : null}
+                          {rate}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* 🌟 진짜 AI 분석 코멘트(aiPattern) 출력 영역 추가 */}
+                    {stock.aiPattern && (
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-xl p-3.5 my-4 flex items-start gap-2">
+                        <Sparkles size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-blue-900 font-medium leading-relaxed">
+                          {stock.aiPattern}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-900">{stock.price}원</p>
-                    {/* 등락률 색상 및 아이콘 동적 처리 */}
-                    <p className={`text-sm font-medium flex items-center justify-end gap-1 ${stock.rate.startsWith('+') ? 'text-red-500' : stock.rate.startsWith('-') ? 'text-blue-500' : 'text-gray-500'}`}>
-                      {stock.rate.startsWith('+') ? <TrendingUp size={14} /> : stock.rate.startsWith('-') ? <TrendingDown size={14} /> : null}
-                      {stock.rate}
-                    </p>
+                  
+                  {/* 🌟 동적 파싱된 AI 해시태그 목록 렌더링 */}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {parsedTags.map(tag => (
+                      <span key={tag} className="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs rounded-md border border-gray-100 font-medium">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {stock.tags.map(tag => (
-                    <span key={tag} className="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs rounded-md border border-gray-100">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

@@ -1,12 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Square, Terminal, Cpu, Database, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // 🌟 추가
+import axios from 'axios'; // 🌟 추가
 
 export default function AdminBatch() {
+  const navigate = useNavigate();
+  const isAlerted = useRef(false); // 알림 중복 방지 방패
+
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState(['[SYSTEM] 대기 중... AI 분석 배치를 시작할 수 있습니다.']);
 
-  // 가짜 배치 실행 시뮬레이션 (나중에 백엔드 연동 시 이 부분을 진짜 API 호출로 바꿉니다)
+  // 🌟 1. 문지기 로직: 로그인 안 한 사용자가 관리자 페이지에 들어오는 것 차단
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      if (!isAlerted.current) {
+        alert('관리자 권한이 필요합니다. 먼저 로그인해주세요.');
+        isAlerted.current = true;
+        navigate('/');
+      }
+    }
+  }, [navigate]);
+
+  // 가짜 배치 실행 시뮬레이션 (프론트엔드 애니메이션용)
   useEffect(() => {
     let interval;
     if (isRunning && progress < 100) {
@@ -31,10 +48,25 @@ export default function AdminBatch() {
     return () => clearInterval(interval);
   }, [isRunning, progress]);
 
-  const handleStartBatch = () => {
+  const handleStartBatch = async () => {
     setIsRunning(true);
     setProgress(0);
     setLogs(['[SYSTEM] 수동 배치 트리거 작동. Spring Batch Job을 시작합니다...']);
+
+    // 🌟 2. 실제 백엔드 연동을 대비한 axios 코드 (현재는 주석 처리, 나중에 백엔드 완성 후 주석 해제)
+    try {
+      const token = localStorage.getItem('accessToken');
+      // 🌟 URL 끝부분을 /run 에서 /start 로 수정합니다!
+      await axios.post('http://localhost:8080/api/v1/batch/start', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setLogs(prev => [...prev, '[SYSTEM] 서버에 배치 실행 요청을 성공적으로 전달했습니다.']);
+    } catch (error) {
+      console.error("배치 실행 요청 실패", error);
+      setLogs(prev => [...prev, '[ERROR] 서버와 통신할 수 없습니다.']);
+      setIsRunning(false);
+      return;
+    }
   };
 
   const handleStopBatch = () => {
@@ -42,6 +74,7 @@ export default function AdminBatch() {
     setLogs(prevLogs => [...prevLogs, '[WARNING] 관리자에 의해 배치가 강제 중단되었습니다.']);
   };
 
+  // UI 부분은 회원님이 만드신 완벽한 코드를 100% 그대로 유지합니다.
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       
