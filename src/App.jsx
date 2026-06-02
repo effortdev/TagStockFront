@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import StockDetail from './pages/StockDetail';
 import AdminBatch from './pages/AdminBatch';
+import Signup from './pages/Signup';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         {/* 2. 메인 콘텐츠 영역 (flex-grow로 남은 세로 공간을 모두 차지함) */}
         <main className="flex-grow w-full max-w-7xl mx-auto px-6 py-8">
           <Routes>
+            <Route path="/signup" element={<Signup />} />
             <Route path="/" element={<Login />} />
             <Route path="/home" element={<Home />} />
             <Route path="/stock/:code" element={<StockDetail />} />
