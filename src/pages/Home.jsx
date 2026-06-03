@@ -120,13 +120,13 @@ export default function Home() {
             type="text" 
             placeholder="종목명(예: 네이버) 또는 코드를 입력하세요" 
             className="w-full pl-12 pr-4 py-4 rounded-full border-2 border-blue-100 focus:outline-none focus:border-blue-500 transition-colors shadow-sm text-lg"
-            value={searchTerm} // 🌟 상태 연결
-            onChange={(e) => setSearchTerm(e.target.value)} // 🌟 입력값 변경 감지
-            onKeyDown={handleKeyDown} // 🌟 엔터키 감지
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={24} />
           <button 
-            onClick={handleSearch} // 🌟 클릭 이벤트 연결
+            onClick={handleSearch}
             className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-medium transition-colors"
           >
             검색
@@ -170,8 +170,8 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {stocks.map(stock => {
-              // 🌟 DB의 JSON 문자열 형태인 aiTags를 배열로 안전하게 변환
+            {/* 🌟 수정된 부분: index를 추가하여 고유한 key를 생성합니다 */}
+            {stocks.map((stock, index) => {
               let parsedTags = [];
               try {
                 parsedTags = typeof stock.aiTags === 'string' ? JSON.parse(stock.aiTags) : (stock.tags || []);
@@ -183,7 +183,8 @@ export default function Home() {
 
               return (
                 <Link 
-                  key={stock.stockCode} 
+                  // 🌟 수정된 부분: stockCode와 index를 결합하여 중복 에러 완벽 차단!
+                  key={`${stock.stockCode}-${index}`} 
                   to={`/stock/${stock.stockCode}`} 
                   className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 duration-200 group cursor-pointer flex flex-col justify-between"
                 >
@@ -202,7 +203,6 @@ export default function Home() {
                       </div>
                     </div>
                     
-                    {/* 🌟 진짜 AI 분석 코멘트 출력 영역 */}
                     {stock.aiPattern && (
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-xl p-3.5 my-4 flex items-start gap-2">
                         <Sparkles size={16} className="text-blue-500 mt-0.5 shrink-0" />
@@ -213,7 +213,6 @@ export default function Home() {
                     )}
                   </div>
                   
-                  {/* 🌟 동적 파싱된 AI 해시태그 목록 렌더링 */}
                   <div className="flex flex-wrap gap-2 mt-2">
                     {parsedTags.map(tag => (
                       <span key={tag} className="px-2.5 py-1 bg-gray-50 text-gray-600 text-xs rounded-md border border-gray-100 font-medium">

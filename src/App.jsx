@@ -27,7 +27,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/" element={<Login />} />
             <Route path="/home" element={<Home />} />
-            <Route path="/stock/:code" element={<StockDetail />} />
+            <Route path="/stock/:stockCode" element={<StockDetail />} />
             <Route path="/admin" element={<AdminBatch />} />
             <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
           </Routes>
