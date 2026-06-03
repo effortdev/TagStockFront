@@ -12,12 +12,61 @@ export default function Home() {
   // 백엔드에서 받아올 주식 데이터를 담을 상태
   const [stocks, setStocks] = useState([]);
 
+  // 🌟 검색어를 관리할 상태 추가
+  const [searchTerm, setSearchTerm] = useState('');
+
   // 알림 중복 방지용 방패 생성 (초기값은 false)
   const isAlerted = useRef(false);
 
   const aiTags = [
     '#골든크로스임박', '#외인매집중', '#과매도구간', '#박스권돌파', '#실적턴어라운드'
   ];
+
+  // 🌟 검색 실행 함수 (종목명 -> 종목코드 자동 변환 로직)
+  const handleSearch = () => {
+    const term = searchTerm.trim();
+
+    if (!term) {
+      alert('검색할 종목명이나 코드를 입력해주세요.');
+      return;
+    }
+
+    // 1. 입력값이 숫자로만 이루어져 있는지 검사 (정규식)
+    const isCode = /^\d+$/.test(term);
+    let targetCode = term;
+
+    // 2. 숫자가 아니라면 (이름으로 검색했다면) 코드로 변환
+    if (!isCode) {
+      // 💡 현재 수집 중인 종목들을 매핑해두는 사전(Dictionary)
+      const stockDictionary = {
+        "삼성전자": "005930",
+        "SK하이닉스": "000660",
+        "하이닉스": "000660", // 줄임말 대응
+        "NAVER": "035420",
+        "네이버": "035420",   // 한글 대응
+        "현대차": "005380",
+        "현대자동차": "005380"
+      };
+
+      // 입력값을 대문자로 변환해서 비교 (naver -> NAVER)
+      targetCode = stockDictionary[term.toUpperCase()]; 
+
+      if (!targetCode) {
+        alert('현재 분석 데이터가 없는 종목이거나 이름을 잘못 입력하셨습니다.');
+        return;
+      }
+    }
+
+    // 3. 최종적으로 찾은 '종목 코드'로 상세 페이지 이동!
+    navigate(`/stock/${targetCode}`);
+  };
+
+  // 🌟 엔터키 입력 감지 함수
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   // selectedTag가 변경될 때마다 백엔드 API를 호출합니다.
   useEffect(() => {
@@ -69,11 +118,17 @@ export default function Home() {
         <div className="relative w-full max-w-2xl">
           <input 
             type="text" 
-            placeholder="종목명 또는 종목코드를 입력하세요" 
+            placeholder="종목명(예: 네이버) 또는 코드를 입력하세요" 
             className="w-full pl-12 pr-4 py-4 rounded-full border-2 border-blue-100 focus:outline-none focus:border-blue-500 transition-colors shadow-sm text-lg"
+            value={searchTerm} // 🌟 상태 연결
+            onChange={(e) => setSearchTerm(e.target.value)} // 🌟 입력값 변경 감지
+            onKeyDown={handleKeyDown} // 🌟 엔터키 감지
           />
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={24} />
-          <button className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-medium transition-colors">
+          <button 
+            onClick={handleSearch} // 🌟 클릭 이벤트 연결
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-medium transition-colors"
+          >
             검색
           </button>
         </div>
@@ -116,8 +171,7 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {stocks.map(stock => {
-              // 🌟 DB의 JSON 문자열 형태인 aiTags를 배열로 안전하게 변환합니다.
-              // 만약 값이 없거나 파싱에 실패하면 빈 배열을 사용합니다.
+              // 🌟 DB의 JSON 문자열 형태인 aiTags를 배열로 안전하게 변환
               let parsedTags = [];
               try {
                 parsedTags = typeof stock.aiTags === 'string' ? JSON.parse(stock.aiTags) : (stock.tags || []);
@@ -125,25 +179,21 @@ export default function Home() {
                 parsedTags = [];
               }
 
-              // 등락률 데이터가 없는 경우를 대비한 가공 처리 (필요시 사용)
               const rate = stock.rate || "0.0%";
 
               return (
                 <Link 
-                  key={stock.stockCode} // 🌟 code -> stockCode 매핑 수정
-                  to={`/stock/${stock.stockCode}`} // 🌟 code -> stockCode 매핑 수정
+                  key={stock.stockCode} 
+                  to={`/stock/${stock.stockCode}`} 
                   className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 duration-200 group cursor-pointer flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        {/* 🌟 name -> stockName 매핑 수정 */}
                         <h4 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{stock.stockName}</h4>
-                        {/* 🌟 code -> stockCode 매핑 수정 */}
                         <span className="text-sm text-gray-400 font-mono">{stock.stockCode}</span>
                       </div>
                       <div className="text-right">
-                        {/* 🌟 price -> closePrice 매핑 수정 및 천단위 콤마 표시 */}
                         <p className="text-lg font-bold text-gray-900">{stock.closePrice?.toLocaleString()}원</p>
                         <p className={`text-sm font-medium flex items-center justify-end gap-1 ${rate.startsWith('+') ? 'text-red-500' : rate.startsWith('-') ? 'text-blue-500' : 'text-gray-500'}`}>
                           {rate.startsWith('+') ? <TrendingUp size={14} /> : rate.startsWith('-') ? <TrendingDown size={14} /> : null}
@@ -152,7 +202,7 @@ export default function Home() {
                       </div>
                     </div>
                     
-                    {/* 🌟 진짜 AI 분석 코멘트(aiPattern) 출력 영역 추가 */}
+                    {/* 🌟 진짜 AI 분석 코멘트 출력 영역 */}
                     {stock.aiPattern && (
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100/50 rounded-xl p-3.5 my-4 flex items-start gap-2">
                         <Sparkles size={16} className="text-blue-500 mt-0.5 shrink-0" />
@@ -177,7 +227,6 @@ export default function Home() {
           </div>
         )}
       </div>
-
     </div>
   );
 }
